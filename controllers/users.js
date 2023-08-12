@@ -18,7 +18,7 @@ module.exports.getUserById = (req, res) => {
       })
       .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
   } else {
-    res.status(404).send({ message: 'id должен быть не менее 24 символов' });
+    res.status(400).send({ message: 'id должен быть не менее 24 символов' });
   }
 };
 
