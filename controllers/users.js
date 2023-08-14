@@ -44,7 +44,7 @@ module.exports.editUserAbout = (req, res) => {
         if (err.name === 'ValidationError') {
           res.status(400).send({ message: err.message });
         } else {
-          res.status(404).send({ message: 'Пользовател с указанным id не существует' });
+          res.status(500).send({ message: 'Пользовател с указанным id не существует' });
         }
       });
   } else {
@@ -61,7 +61,7 @@ module.exports.editUserAvatar = (req, res) => {
         if (err.name === 'ValidationError') {
           res.status(400).send({ message: err.message });
         } else {
-          res.status(404).send({ message: 'Пользовател с указанным id не существует' });
+          res.status(500).send({ message: 'Пользовател с указанным id не существует' });
         }
       });
   } else {
