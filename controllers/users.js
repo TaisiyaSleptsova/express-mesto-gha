@@ -1,70 +1,71 @@
+const BadRequestError = require('../errors/BadRequestError');
+const NotFoundError = require('../errors/NotFoundError');
 const User = require('../models/user');
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send(users))
-    .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
+    .catch(next);
 };
 
-module.exports.getUserById = (req, res) => {
-  if (req.params.userId.length === 24) {
-    User.findById(req.params.userId)
-      .then((user) => {
-        if (!user) {
-          res.status(404).send({ message: 'Пользовател с указанным id не существует' });
-          return;
-        }
-        res.send(user);
-      })
-      .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
-  } else {
-    res.status(400).send({ message: 'id должен быть не менее 24 символов' });
-  }
+module.exports.getUserById = (req, res, next) => {
+  User.findById(req.params.userId)
+    .orFail(new Error('NotValidId'))
+    .then((user) => {
+      res.send(user);
+    })
+    .catch((err) => {
+      if (req.params.userId.length !== 24) {
+        next(new BadRequestError('id должен быть не менее 24 символов'));
+      } else if (err.name !== 'ValidationError') {
+        next(new NotFoundError('Пользователь с указанным id не существует'));
+      } else {
+        next(err);
+      }
+    });
 };
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const { name, about, avatar } = req.body;
   User.create({ name, about, avatar })
     .then((user) => res.status(201).send(user))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({ message: err.message });
+        next(new BadRequestError(err.message));
       } else {
-        res.status(500).send({ message: 'На сервере произошла ошибка' });
+        next(err);
       }
     });
 };
 
-module.exports.editUserAbout = (req, res) => {
+module.exports.editUserAbout = (req, res, next) => {
   const { name, about } = req.body;
-  if (req.user._id) {
-    User.findByIdAndUpdate(req.user._id, { name, about }, { new: 'true', runValidators: true })
-      .then((user) => res.send(user))
-      .catch((err) => {
-        if (err.name === 'ValidationError') {
-          res.status(400).send({ message: err.message });
-        } else {
-          res.status(500).send({ message: 'Пользовател с указанным id не существует' });
-        }
-      });
-  } else {
-    res.status(500).send({ message: 'На сервере произошла ошибка' });
-  }
+  User.findByIdAndUpdate(req.user._id, { name, about }, { new: 'true', runValidators: true })
+    .orFail(new Error('NotValidId'))
+    .then((user) => res.send(user))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError(err.message));
+      } else if (err.message === 'NotValidId') {
+        next(new NotFoundError('Пользователь с указанным id не существует'));
+      } else {
+        next(err);
+      }
+    });
 };
 
-module.exports.editUserAvatar = (req, res) => {
+module.exports.editUserAvatar = (req, res, next) => {
   const { avatar } = req.body;
-  if (req.user._id) {
-    User.findByIdAndUpdate(req.user._id, { avatar }, { new: 'true', runValidators: true })
-      .then((user) => res.send(user))
-      .catch((err) => {
-        if (err.name === 'ValidationError') {
-          res.status(400).send({ message: err.message });
-        } else {
-          res.status(500).send({ message: 'Пользовател с указанным id не существует' });
-        }
-      });
-  } else {
-    res.status(500).send({ message: 'На сервере произошла ошибка' });
-  }
+  User.findByIdAndUpdate(req.user._id, { avatar }, { new: 'true', runValidators: true })
+    .orFail(new Error('NotValidId'))
+    .then((user) => res.send(user))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError(err.message));
+      } else if (err.message === 'NotValidId') {
+        next(new NotFoundError('Пользователь с указанным id не существует'));
+      } else {
+        next(err);
+      }
+    });
 };

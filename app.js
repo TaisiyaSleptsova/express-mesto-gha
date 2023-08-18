@@ -29,5 +29,16 @@ app.use('/cards', require('./routes/cards'));
 
 app.use('*', (req, res) => { res.status(404).send({ message: 'Данной страницы не существует' }); });
 
+app.use((err, req, res, next) => {
+  const { statusCode = 500, message } = err;
+  res
+    .status(statusCode)
+    .send({
+      message: statusCode === 500
+        ? 'На сервере произошла ошибка'
+        : message,
+    });
+});
+
 app.listen(PORT, () => {
 });
