@@ -1,33 +1,23 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const { errors } = require('celebrate');
 
-const { PORT = 3000 } = process.env;
+const { PORT = 3000, DB_URL = 'mongodb://127.0.0.1:27017/mynewtestdb' } = process.env;
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-mongoose.connect('mongodb://127.0.0.1:27017/mynewtestdb', {
+mongoose.connect(DB_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  // useFindAndModify: false,
 });
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '64d3e23f0df567106bddfb92',
-  };
+app.use('/', require('./routes/index'));
 
-  next();
-});
-
-app.use('/users', require('./routes/users'));
-
-app.use('/cards', require('./routes/cards'));
-
-app.use('*', (req, res) => { res.status(404).send({ message: 'Данной страницы не существует' }); });
+app.use(errors());
 
 app.use((err, req, res, next) => {
   const { statusCode = 500, message } = err;
@@ -38,6 +28,7 @@ app.use((err, req, res, next) => {
         ? 'На сервере произошла ошибка'
         : message,
     });
+  next();
 });
 
 app.listen(PORT, () => {
